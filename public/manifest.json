@@ -1,0 +1,23 @@
+{
+  "name": "E-Ujian SMK Darussalam Panongan",
+  "short_name": "SMK Darussalam",
+  "description": "Aplikasi CBT dan E-Ujian SMK Darussalam Panongan dengan Anti-Cheat Hardcore & Real-Time AI Proctoring",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e3a8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}

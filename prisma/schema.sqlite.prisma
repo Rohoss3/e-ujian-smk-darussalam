@@ -1,0 +1,237 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Sekolah {
+  id            String   @id @default(cuid())
+  nama          String   @default("SMK Negeri 1 Teknologi & Rekayasa")
+  npsn          String   @default("20219482")
+  alamat        String   @default("Jl. Pendidikan Vokasi No. 45, Kota Bandung")
+  logoUrl       String?
+  kepalaSekolah String   @default("Drs. H. Mulyono, M.Pd.")
+  nipKepala     String   @default("19680512 199303 1 005")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model User {
+  id                 String         @id @default(cuid())
+  username           String         @unique
+  password           String
+  name               String
+  email              String?
+  role               String         @default("SISWA") // ADMIN, GURU, SISWA, PENGAWAS
+  nisn               String?        @unique
+  nip                String?        @unique
+  phone              String?
+  avatar             String?
+  kelasId            String?
+  kelas              Kelas?         @relation(fields: [kelasId], references: [id])
+  jurusanId          String?
+  jurusan            Jurusan?       @relation(fields: [jurusanId], references: [id])
+  activeSessionToken String?
+  pengerjaan         PesertaUjian[]
+  bankSoalDibuat     BankSoal[]
+  ujianDibuat        Ujian[]
+  beritaAcaraDiawasi BeritaAcara[]
+  importLogs         ImportLog[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model Jurusan {
+  id            String          @id @default(cuid())
+  kode          String          @unique
+  nama          String
+  deskripsi     String?
+  kelas         Kelas[]
+  siswa         User[]
+  mataPelajaran MataPelajaran[]
+  bankSoal      BankSoal[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Kelas {
+  id          String        @id @default(cuid())
+  nama        String        @unique
+  tingkat     Int
+  jurusanId   String
+  jurusan     Jurusan       @relation(fields: [jurusanId], references: [id], onDelete: Cascade)
+  siswa       User[]
+  beritaAcara BeritaAcara[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model MataPelajaran {
+  id        String     @id @default(cuid())
+  kode      String     @unique
+  nama      String
+  jurusanId String?
+  jurusan   Jurusan?   @relation(fields: [jurusanId], references: [id])
+  kkm       Float      @default(75.0)
+  bankSoal  BankSoal[]
+  ujian     Ujian[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model BankSoal {
+  id              String        @id @default(cuid())
+  judul           String
+  deskripsi       String?
+  guruId          String
+  guru            User          @relation(fields: [guruId], references: [id])
+  mataPelajaranId String
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id])
+  jurusanId       String?
+  jurusan         Jurusan?      @relation(fields: [jurusanId], references: [id])
+  tingkat         Int?
+  soal            Soal[]
+  ujian           Ujian[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Soal {
+  id               String   @id @default(cuid())
+  bankSoalId       String
+  bankSoal         BankSoal @relation(fields: [bankSoalId], references: [id], onDelete: Cascade)
+  nomorUrut        Int      @default(1)
+  tipeSoal         String   @default("PILIHAN_GANDA") // PILIHAN_GANDA, ESSAY
+  tingkatKesulitan String   @default("SEDANG") // MUDAH, SEDANG, SULIT
+  pertanyaan       String
+  gambarUrl        String?
+  opsiA            String?
+  opsiB            String?
+  opsiC            String?
+  opsiD            String?
+  opsiE            String?
+  kunciJawaban     String?
+  bobot            Float    @default(1.0)
+  jawabanSiswa     JawabanSiswa[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Ujian {
+  id             String         @id @default(cuid())
+  judul          String
+  kodeUjian      String         @unique
+  tokenUjian     String
+  deskripsi      String?
+  bankSoalId     String
+  bankSoal       BankSoal       @relation(fields: [bankSoalId], references: [id])
+  guruId         String
+  guru           User           @relation(fields: [guruId], references: [id])
+  mataPelajaranId String
+  mataPelajaran  MataPelajaran  @relation(fields: [mataPelajaranId], references: [id])
+  kelasTarget    String
+  waktuMulai     DateTime
+  waktuSelesai   DateTime
+  durasiMenit    Int            @default(90)
+  acakSoal       Boolean        @default(true)
+  acakOpsi       Boolean        @default(true)
+  tampilkanHasil Boolean        @default(false)
+  maxPelanggaran Int            @default(3)
+  status         String         @default("DRAFT")
+  peserta        PesertaUjian[]
+  beritaAcara    BeritaAcara[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model PesertaUjian {
+  id                String           @id @default(cuid())
+  ujianId           String
+  ujian             Ujian            @relation(fields: [ujianId], references: [id], onDelete: Cascade)
+  siswaId           String
+  siswa             User             @relation(fields: [siswaId], references: [id])
+  status            String           @default("BELUM_MULAI")
+  waktuMulai        DateTime?
+  waktuSelesai      DateTime?
+  sisaWaktuDetik    Int              @default(5400)
+  jumlahPelanggaran Int              @default(0)
+  seedAcak          Int              @default(12345)
+  nilaiPG           Float            @default(0.0)
+  nilaiEssay        Float            @default(0.0)
+  totalNilai        Float            @default(0.0)
+  statusKelulusan   String           @default("BELUM_DINILAI")
+  catatanPengawas   String?
+  deviceFingerprint String?
+  jawaban           JawabanSiswa[]
+  logPelanggaran    LogPelanggaran[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([ujianId, siswaId])
+}
+
+model JawabanSiswa {
+  id             String       @id @default(cuid())
+  pesertaUjianId String
+  pesertaUjian   PesertaUjian @relation(fields: [pesertaUjianId], references: [id], onDelete: Cascade)
+  soalId         String
+  soal           Soal         @relation(fields: [soalId], references: [id], onDelete: Cascade)
+  jawabanPG      String?
+  jawabanEssay   String?
+  raguRagu       Boolean      @default(false)
+  isCorrect      Boolean?
+  nilaiDidapat   Float        @default(0.0)
+  feedbackEssay  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([pesertaUjianId, soalId])
+}
+
+model LogPelanggaran {
+  id               String       @id @default(cuid())
+  pesertaUjianId   String
+  pesertaUjian     PesertaUjian @relation(fields: [pesertaUjianId], references: [id], onDelete: Cascade)
+  jenisPelanggaran String
+  deskripsi        String
+  snapshotFoto     String?
+  timestamp        DateTime     @default(now())
+}
+
+model BeritaAcara {
+  id               String    @id @default(cuid())
+  ujianId          String
+  ujian            Ujian     @relation(fields: [ujianId], references: [id], onDelete: Cascade)
+  kelasId          String?
+  kelas            Kelas?    @relation(fields: [kelasId], references: [id])
+  pengawasId       String
+  pengawas         User      @relation(fields: [pengawasId], references: [id])
+  tanggal          DateTime  @default(now())
+  ruang            String    @default("Lab Komputer 1")
+  jumlahHadir      Int       @default(0)
+  jumlahTidakHadir Int       @default(0)
+  catatanKejadian  String?
+  signedByPengawas Boolean   @default(false)
+  fileUrl          String?
+  generatedAt      DateTime  @default(now())
+  generatedBy      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model ImportLog {
+  id            String   @id @default(cuid())
+  tipe          String   // SOAL, SISWA, NILAI
+  fileName      String
+  status        String   // SUCCESS, PARTIAL, ERROR
+  errorDetail   String?
+  totalBaris    Int      @default(0)
+  totalBerhasil Int      @default(0)
+  totalGagal    Int      @default(0)
+  importedById  String?
+  importedBy    User?    @relation(fields: [importedById], references: [id])
+  createdAt     DateTime @default(now())
+}
